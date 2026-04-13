@@ -1,11 +1,19 @@
 import express from "express";
 import { registerUserSchema } from "../validators/userValidation";
 import bcrypt from "bcrypt";
-import { prisma } from "../src/db";
+import {authMiddleware} from "../middlewares/authMiddleware"
+import { prismaClient } from "../db";
+import {createRoomSchema} from "../validators/roomValidation";
 import jwt from "jsonwebtoken";
 const router = express.Router();
 
-router.post("/register", async(req, res)=>{
+import { Request } from "express";
+
+export interface AuthRequest extends Request {
+  userId?: string;
+}
+
+router.post("/signup", async(req, res)=>{
       const{email,name,password} = req.body;
 
       const success= registerUserSchema.safeParse(req.body);
@@ -15,7 +23,7 @@ router.post("/register", async(req, res)=>{
         })
       }
 
-      const existinguser= await prisma.user.findUnique({
+      const existinguser= await prismaClient.user.findUnique({
         where:{email}
       })
       if(existinguser){
@@ -25,7 +33,7 @@ router.post("/register", async(req, res)=>{
       }
 
       const hashedPassword= await bcrypt.hash(password, 10);
-      const user= await prisma.user.create({
+      const user= await prismaClient.user.create({
           email,
           name,
           password:hashedPassword
@@ -46,7 +54,7 @@ router.post("/register", async(req, res)=>{
 router.post("/signin", async(req,res)=>{
       const {email, password}= req.body;
 
-      const user= await prisma.user.findUnique({
+      const user= await prismaClient.user.findUnique({
         where: {email}
       })
       if(!user){
@@ -74,4 +82,55 @@ router.post("/signin", async(req,res)=>{
 });
 
 
+router.post("/room",authMiddleware, async(req:AuthRequest,res)=>{
+  const userId= req.userId;
+      const data= createRoomSchema.safeParse(req.body);
+      if(!data.success){
+        res.json({
+          message:"incorrect inputs"
+        })
+        return;
+      }
+      res.json({
+        roomId: userId
+      })
+})
+
+router.get("/chats/:roomId",(req,res)=>{
+    const roomId = Number(req.params.roomId);
+    const messages= prismaClient.chat.findMany({
+      where:{
+        roomId: roomId
+      },
+      orderBy:{
+        id: "desc"
+      },
+      take:50
+    });
+    res.json({
+      messages
+    })
+})
+
+
+router.get("/chats/:slug",(req,res)=>{
+    const roomId = Number(req.params.slug);
+    const messages= prismaClient.chat.findMany({
+      where:{
+        roomId: roomId
+      },
+      orderBy:{
+        id: "desc"
+      },
+      take:50
+    });
+    res.json({
+      messages
+    })
+})
+
+
+//room permissions
+//rate limiting
+//propogate to a queue to make it faster
 export default router;

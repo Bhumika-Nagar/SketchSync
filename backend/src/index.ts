@@ -1,18 +1,23 @@
 import express from "express";
 import cors from "cors";
-import http from "http";
-import { initWebSocket } from "./ws";
+import router from "./routes/userRoutes";
+import "./ws";
 
 const app = express();
-app.use(cors());
+
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true
+}));
+
 app.use(express.json());
-const server = http.createServer(app);
-initWebSocket(server);
+
+app.use("/api", router);
 
 app.get("/", (req, res) => {
   res.send("Backend is running");
 });
 
-server.listen(3001, () => {
-  console.log("Server running on port 3001");
+app.listen(5000, () => {
+  console.log("HTTP server running on port 5000");
 });

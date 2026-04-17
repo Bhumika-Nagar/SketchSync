@@ -6,18 +6,19 @@ import "./ws";
 const app = express();
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: true,
   credentials: true
 }));
 
 app.use(express.json());
 
-app.use("/api", router);
 
 app.get("/", (req, res) => {
   res.send("Backend is running");
 });
 
+
+app.use("/user", router);
 app.listen(5000, () => {
   console.log("HTTP server running on port 5000");
 });

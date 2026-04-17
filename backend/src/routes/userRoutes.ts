@@ -26,17 +26,20 @@ router.post("/signup", async(req, res)=>{
       const existinguser= await prismaClient.user.findUnique({
         where:{email}
       })
+
       if(existinguser){
-        return res.status(404).json({
+        return res.status(409).json({
           messgae:"email is already registered"
         })
       }
 
       const hashedPassword= await bcrypt.hash(password, 10);
       const user= await prismaClient.user.create({
+        data:{
           email,
           name,
           password:hashedPassword
+        },
       })
 
       const userId= user.id;
@@ -113,19 +116,15 @@ router.get("/chats/:roomId",(req,res)=>{
 })
 
 
-router.get("/chats/:slug",(req,res)=>{
-    const roomId = Number(req.params.slug);
-    const messages= prismaClient.chat.findMany({
+router.get("/chats/:slug",async(req,res)=>{
+    const slug = req.params.slug;
+    const room= prismaClient.room.findFirst({
       where:{
-        roomId: roomId
-      },
-      orderBy:{
-        id: "desc"
-      },
-      take:50
+        slug
+      }
     });
     res.json({
-      messages
+      room
     })
 })
 

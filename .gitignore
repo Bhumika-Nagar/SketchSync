@@ -1,4 +1,4 @@
-frontend/
+
 .prisma/
 backend/src/generated/
 # dependencies
@@ -12,14 +12,15 @@ node_modules/
 !.yarn/versions
 
 # testing
-/coverage
+coverage
 
 # next.js
-/.next/
-/out/
+.next/
+out/
 
 # production
-/build
+build
+.turbo/
 
 # misc
 .DS_Store

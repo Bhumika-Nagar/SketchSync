@@ -99,9 +99,9 @@ router.post("/room",authMiddleware, async(req:AuthRequest,res)=>{
       })
 })
 
-router.get("/chats/:roomId",(req,res)=>{
+router.get("/chats/:roomId", async (req, res) => {
     const roomId = Number(req.params.roomId);
-    const messages= prismaClient.chat.findMany({
+    const messages= await prismaClient.chat.findMany({
       where:{
         roomId: roomId
       },
@@ -116,9 +116,9 @@ router.get("/chats/:roomId",(req,res)=>{
 })
 
 
-router.get("/chats/:slug",async(req,res)=>{
+router.get("/room/:slug",async(req,res)=>{
     const slug = req.params.slug;
-    const room= prismaClient.room.findFirst({
+    const room= await prismaClient.room.findFirst({
       where:{
         slug
       }

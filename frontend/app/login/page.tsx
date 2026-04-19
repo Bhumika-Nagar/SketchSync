@@ -7,6 +7,8 @@ import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Link from "next/link";
 import api from "@/lib/api";
+import type { AxiosError } from "axios";
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,8 +26,9 @@ export default function Login() {
     localStorage.setItem("accessToken", res.data.token);
     router.push("/dashboard");
 
-  } catch (error: any) {
-    console.error(error.response?.data || error.message);
+  } catch (error) {
+    const axiosError = error as AxiosError<{ message?: string }>;
+    console.error(axiosError.response?.data || axiosError.message);
   }
     
   };
@@ -34,17 +37,23 @@ export default function Login() {
     <Card title="Welcome Back">
       <Input
         value={email}
-        onChange={(e: any) => setEmail(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+          setEmail(e.target.value)
+        }
         placeholder="Email"
       />
         <Input
         value={name}
-        onChange={(e: any) => setName(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+          setName(e.target.value)
+        }
         placeholder="Full name"
         />     
       <Input
         value={password}
-        onChange={(e: any) => setPassword(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+          setPassword(e.target.value)
+        }
         placeholder="Password"
         type="password"
       />

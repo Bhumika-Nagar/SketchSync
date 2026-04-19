@@ -1,9 +1,16 @@
+import type { ChangeEventHandler, InputHTMLAttributes } from "react";
+
+type InputProps = {
+  value: string;
+  onChange: ChangeEventHandler<HTMLInputElement>;
+} & Pick<InputHTMLAttributes<HTMLInputElement>, "placeholder" | "type">;
+
 export default function Input({
   value,
   onChange,
   placeholder,
   type = "text",
-}: any) {
+}: InputProps) {
   return (
     <input
       value={value}

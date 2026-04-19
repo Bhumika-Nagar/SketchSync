@@ -14,7 +14,9 @@ export default function Dashboard() {
     <Card title="Join a Room">
       <Input
         value={roomId}
-        onChange={(e: any) => setRoomId(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+          setRoomId(e.target.value)
+        }
         placeholder="Enter Room ID"
       />
 

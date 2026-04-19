@@ -7,6 +7,8 @@ import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import Link from "next/link";
 import api from "@/lib/api";
+import type { AxiosError } from "axios";
+
 export default function Signup() {
   const [email, setemail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,8 +26,9 @@ export default function Signup() {
     localStorage.setItem("accessToken", res.data.token);
     router.push("/dashboard");
 
-  } catch (error: any) {
-    console.error(error.response?.data || error.message);
+  } catch (error) {
+    const axiosError = error as AxiosError<{ message?: string }>;
+    console.error(axiosError.response?.data || axiosError.message);
   }
 
   };
@@ -34,17 +37,23 @@ export default function Signup() {
     <Card title="Create Account">
       <Input
         value={email}
-        onChange={(e: any) => setemail(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+          setemail(e.target.value)
+        }
         placeholder="email"
       />
         <Input
         value={name}
-        onChange={(e: any) => setName(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+          setName(e.target.value)
+        }
         placeholder="Full name"
       />
       <Input
         value={password}
-        onChange={(e: any) => setPassword(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+          setPassword(e.target.value)
+        }
         placeholder="Password"
         type="password"
       />

@@ -73,10 +73,10 @@ api.interceptors.response.use(
 );
 
 // 🔹 Generic request
-export const apiRequest = async <T = any>(
+export const apiRequest = async <T = unknown>(
   method: AxiosRequestConfig["method"],
   url: string,
-  data?: any,
+  data?: unknown,
   config?: AxiosRequestConfig
 ): Promise<T> => {
   const response: AxiosResponse<T> = await api({

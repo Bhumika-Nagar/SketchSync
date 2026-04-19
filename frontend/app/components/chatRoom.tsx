@@ -1,7 +1,7 @@
 import api from "@/lib/api";
 
 async function getChats(roomId: string) {
-    const response = await api.get('/chats/${roomId}');
+    const response = await api.get(`/chats/${roomId}`);
     return response.data.messages
 }
 

@@ -12,33 +12,42 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id       String  @id @default(uuid())
+  email    String  @unique
+  password String
+  name     String
+  photo    String?
 
-model User{
-  id         String    @id @default(uuid())
-  email      String    @unique
-  password   String
-  name       String
-  photo      String?
-  rooms      Room[]
-  chats      Chat[]
+  rooms    Room[]   @relation("UserRooms")
+  chats    Chat[]
 }
 
-model Room{
-  id        Int       @id @default(autoincrement())
-  slug      String    @unique
-  createdAt DateTime  @default(now())
-  adminId   String
-  admin     User      @relation(fields: [adminId], references: [id])
+model Room {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  createdBy   String
+  admin     User     @relation("UserRooms", fields: [createdBy], references: [id])
+
   chats     Chat[]
 }
 
-model Chat{
-  id        Int       @id @default(autoincrement())
-  roomId    Int
-  message   String
+
+model Chat {
+  id        Int      @id @default(autoincrement())
+
+  roomId    String
   userId    String
-  room      Room      @relation(fields: [roomId], references: [id])
-  user      User      @relation(fields: [userId], references: [id])
+
+  message   String
+  createdAt DateTime @default(now())
+
+  room      Room     @relation(fields: [roomId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([roomId])
 }
 
 

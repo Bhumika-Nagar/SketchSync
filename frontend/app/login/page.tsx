@@ -23,7 +23,7 @@ export default function Login() {
       password,
     });
 
-    localStorage.setItem("accessToken", res.data.token);
+    localStorage.setItem("token", res.data.token);
     router.push("/dashboard");
 
   } catch (error) {

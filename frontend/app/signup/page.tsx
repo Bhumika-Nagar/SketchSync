@@ -23,7 +23,7 @@ export default function Signup() {
   password,
 });
 
-    localStorage.setItem("accessToken", res.data.token);
+    localStorage.setItem("token", res.data.token);
     router.push("/dashboard");
 
   } catch (error) {

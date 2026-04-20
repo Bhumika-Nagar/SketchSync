@@ -1,58 +1,37 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSocket } from "../hooks/useSocket";
+import { type RoomSocketEvent, type RoomEventSubscriber } from "../hooks/useSocket";
 import Input from "./ui/Input";
 import Button from "./ui/Button";
 
 export function ChatRoomClient({
   messages,
   id,
+  socket,
+  subscribeToRoomEvents,
 }: {
   messages: { message: string }[];
   id: string;
+  socket?: WebSocket;
+  subscribeToRoomEvents: RoomEventSubscriber;
 }) {
   const [chats, setChats] = useState(messages);
   const [currentMessage, setCurrentMessage] = useState("");
-  const { socket, loading } = useSocket();
 
   useEffect(() => {
-    if (!socket || loading) {
-      return;
-    }
-
-    socket.send(
-      JSON.stringify({
-        type: "join_room",
-        roomId: id,
-      }),
-    );
-
-    const handleMessage = (event: MessageEvent<string>) => {
-      const parsedData = JSON.parse(event.data);
-      if (parsedData.type === "chat") {
+    return subscribeToRoomEvents((event: RoomSocketEvent) => {
+      if (event.type === "chat") {
         setChats((currentChats) => [
           ...currentChats,
-          { message: parsedData.message },
+          { message: event.message },
         ]);
       }
-    };
-
-    socket.addEventListener("message", handleMessage);
-
-    return () => {
-      socket.removeEventListener("message", handleMessage);
-      socket.send(
-        JSON.stringify({
-          type: "leave_room",
-          roomId: id,
-        }),
-      );
-    };
-  }, [socket, loading, id]);
+    });
+  }, [subscribeToRoomEvents]);
 
   return (
-    <aside className="flex min-h-[680px] flex-col rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.95)] backdrop-blur">
+    <aside className="flex min-h-680px flex-col rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.95)] backdrop-blur">
       <div className="mb-5 border-b border-white/10 pb-4">
         <p className="text-xs uppercase tracking-[0.28em] text-blue-200/70">
           Chat

@@ -12,11 +12,11 @@ const api = axios.create({
 });
 
 // 🔹 Helper: get access token
-const getToken = () => localStorage.getItem("accessToken");
+const getToken = () => localStorage.getItem("token");
 
 // 🔹 Helper: set access token
 const setToken = (token: string) => {
-  localStorage.setItem("accessToken", token);
+  localStorage.setItem("token", token);
 };
 
 // 🔹 Request Interceptor (attach JWT)
@@ -49,7 +49,7 @@ api.interceptors.response.use(
           { withCredentials: true }
         );
 
-        const newAccessToken = res.data.accessToken;
+        const newAccessToken = res.data.token;
 
         // Save new token
         setToken(newAccessToken);
@@ -61,7 +61,7 @@ api.interceptors.response.use(
         console.error("Refresh token expired. Please login again.");
 
         // Optional: logout logic
-        localStorage.removeItem("accessToken");
+        localStorage.removeItem("token");
         window.location.href = "/login";
 
         return Promise.reject(refreshError);

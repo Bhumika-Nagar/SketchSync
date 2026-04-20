@@ -5,6 +5,7 @@ import {authMiddleware} from "../middlewares/authMiddleware"
 import { prismaClient } from "../db";
 import {createRoomSchema} from "../validators/roomValidation";
 import jwt from "jsonwebtoken";
+import { v4 as uuidv4 } from "uuid";
 const router = express.Router();
 
 import { Request } from "express";
@@ -85,22 +86,36 @@ router.post("/signin", async(req,res)=>{
 });
 
 
-router.post("/room",authMiddleware, async(req:AuthRequest,res)=>{
-  const userId= req.userId;
-      const data= createRoomSchema.safeParse(req.body);
-      if(!data.success){
-        res.json({
-          message:"incorrect inputs"
-        })
-        return;
-      }
-      res.json({
-        roomId: userId
-      })
-})
+router.post("/room", authMiddleware, async (req: AuthRequest, res) => {
+  if (!req.userId) {
+  return res.status(401).json({
+    message: "Unauthorized"
+  });
+}
+
+const userId = req.userId;
+
+  const data = createRoomSchema.safeParse(req.body);
+  if (!data.success) {
+    return res.json({ message: "incorrect inputs" });
+  }
+
+  const slug = uuidv4();
+
+  const room = await prismaClient.room.create({
+    data:{
+      slug,
+      createdBy: userId,
+    }
+  })
+
+  res.json({
+    slug
+  });
+});
 
 router.get("/chats/:roomId", async (req, res) => {
-    const roomId = Number(req.params.roomId);
+    const roomId = (req.params.roomId);
     const messages= await prismaClient.chat.findMany({
       where:{
         roomId: roomId

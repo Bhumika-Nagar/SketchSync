@@ -7,7 +7,13 @@ export type ShapeType =
   | "pencil"
   | "text";
 
-export type Tool = ShapeType | "eraser";
+export type Tool = "select" | ShapeType | "eraser";
+
+export type ResizeHandle =
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right";
 
 export type CanvasPoint = {
   x: number;
@@ -15,6 +21,7 @@ export type CanvasPoint = {
 };
 
 export type CanvasShape = {
+  id: string;
   type: ShapeType;
   x1: number;
   y1: number;

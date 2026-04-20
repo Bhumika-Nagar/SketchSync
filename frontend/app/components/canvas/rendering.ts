@@ -1,5 +1,6 @@
 import type p5 from "p5";
 import type { CanvasShape } from "./types";
+import { getResizeHandlePoints, getShapeBounds } from "./utils";
 
 function drawArrowHead(
   sketch: p5,
@@ -101,4 +102,32 @@ export function drawShape(sketch: p5, shape: CanvasShape) {
     default:
       return;
   }
+}
+
+export function drawSelection(sketch: p5, shape: CanvasShape) {
+  const bounds = getShapeBounds(shape);
+  const handles = getResizeHandlePoints(shape);
+
+  sketch.push();
+  sketch.noFill();
+  sketch.stroke(96, 165, 250);
+  sketch.strokeWeight(1.5);
+  sketch.rect(
+    bounds.left - 6,
+    bounds.top - 6,
+    bounds.right - bounds.left + 12,
+    bounds.bottom - bounds.top + 12,
+  );
+
+  if (handles) {
+    sketch.fill(96, 165, 250);
+    sketch.stroke(226, 232, 240);
+    sketch.strokeWeight(1.5);
+
+    Object.values(handles).forEach((handle) => {
+      sketch.circle(handle.x, handle.y, 12);
+    });
+  }
+
+  sketch.pop();
 }

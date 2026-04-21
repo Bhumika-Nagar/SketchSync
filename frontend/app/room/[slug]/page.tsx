@@ -1,41 +1,37 @@
 import RoomClient from "@/app/components/roomClient";
 import { serverFetch } from "@/lib/serverApi";
 
-  type Room = {
-  id: number;
+type Room = {
+  id: string;
   slug: string;
 };
 
-  type Message = {
+type Message = {
   message: string;
 };
 
-  export default async function ChatRoomPage({
+export default async function ChatRoomPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const { slug } = params;
+  const { slug } = await params;
 
-  
-  const roomData = await serverFetch<{ room: Room }>(
-    `/user/room/${slug}`
-  );
+  const roomData = await serverFetch<{ room: Room }>(`/user/room/${slug}`);
 
   const room = roomData.room;
-  if(!room){
-    throw new Error("Room not found")
+
+  if (!room) {
+    throw new Error("Room not found");
   }
-  
-  const chatData = await serverFetch<{ messages: Message[] }>(
-    `/user/chats/${room.id}`
-  );
+
+  const chatData = await serverFetch<{ messages: Message[] }>(`/user/chats/${room.id}`);
 
   const messages = chatData.messages ?? [];
 
   return (
     <RoomClient
-      roomId={String(room.id)}
+      roomId={room.id}
       messages={messages}
       slug={slug}
     />

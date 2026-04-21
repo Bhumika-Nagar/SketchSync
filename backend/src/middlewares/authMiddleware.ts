@@ -1,25 +1,35 @@
-import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 
-interface AuthRequest extends Request {
-    userId?: string;
-}
+export const authMiddleware = (req: any, res: any, next: any) => {
+  try {
+    
+    const authHeader = req.headers.authorization;
 
-export function authMiddleware(req:AuthRequest, res:Response, next:NextFunction){
-    const token= req.headers["authorization"];
-
-    if (!token || !process.env.JWT_SECRET) {
-        return res.status(401).json({ error: "Unauthorized" });
+    if (!authHeader) {
+      return res.status(401).json({
+        message: "No token provided"
+      });
     }
 
-    const decoded= jwt.verify(token, process.env.JWT_SECRET);
-    if(decoded && typeof decoded !== 'string'){
-        req.userId = decoded.userId;
-        next();
+    const token = authHeader.split(" ")[1];
+
+    if (!token || token === "null") {
+      return res.status(401).json({
+        message: "Invalid token"
+      });
     }
-    else{
-        res.status(403).json({
-            message:"Unauthorized"
-        })
-    }
-}
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+
+    req.userId = decoded.userId;
+
+    next();
+
+  } catch (err) {
+    console.error("AUTH ERROR:", err);
+
+    return res.status(401).json({
+      message: "Unauthorized"
+    });
+  }
+};

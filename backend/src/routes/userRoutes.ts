@@ -85,34 +85,38 @@ router.post("/signin", async(req,res)=>{
       })
 });
 
-
 router.post("/room", authMiddleware, async (req: AuthRequest, res) => {
-  if (!req.userId) {
-  return res.status(401).json({
-    message: "Unauthorized"
-  });
-}
-
-const userId = req.userId;
-
-  const data = createRoomSchema.safeParse(req.body);
-  if (!data.success) {
-    return res.json({ message: "incorrect inputs" });
-  }
-
-  const slug = uuidv4();
-
-  const room = await prismaClient.room.create({
-    data:{
-      slug,
-      createdBy: userId,
+  try {
+    
+    if (!req.userId) {
+      return res.status(401).json({
+        message: "Unauthorized"
+      });
     }
-  })
 
-  res.json({
-    slug
-  });
+    const slug = uuidv4();
+
+    const room = await prismaClient.room.create({
+      data: {
+        slug,
+        createdBy: req.userId,
+      }
+    });
+
+    res.json({
+      roomId: slug  
+    });
+
+  } catch (err: any) {
+    console.error("CREATE ROOM ERROR:", err);
+
+    res.status(500).json({
+      message: "Internal server error",
+      error: err.message
+    });
+  }
 });
+
 
 router.get("/chats/:roomId", async (req, res) => {
     const roomId = (req.params.roomId);
@@ -130,19 +134,29 @@ router.get("/chats/:roomId", async (req, res) => {
     })
 })
 
-
-router.get("/room/:slug",async(req,res)=>{
+router.get("/room/:slug", async (req, res) => {
+  try {
     const slug = req.params.slug;
-    const room= await prismaClient.room.findFirst({
-      where:{
-        slug
-      }
-    });
-    res.json({
-      room
-    })
-})
 
+    const room = await prismaClient.room.findFirst({
+      where: { slug }
+    });
+
+    if (!room) {
+      return res.status(404).json({
+        message: "Room not found"
+      });
+    }
+
+    res.json({ room });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Internal server error"
+    });
+  }
+});
 
 //room permissions
 //rate limiting

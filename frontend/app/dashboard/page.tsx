@@ -9,24 +9,24 @@ export default function Dashboard() {
   const [roomId, setRoomId] = useState("");
 
   const handleCreateRoom = async () => {
-    try {
-      const data = await createRoom();
-      router.push(`/room/${data.roomId}`);
-    } catch (err) {
-      console.error(err);
-      
-      alert("Failed to create room");
-    }
-  };
+  try {
+    const data = await createRoom();
 
-  const handleJoinRoom = () => {
-    if (!roomId.trim()) {
-      alert("Enter room ID");
-      return;
-    }
+    router.push(`/room/${data.roomId}`); 
+  } catch (err) {
+    console.error(err);
+    alert("Failed to create room");
+  }
+};
 
-    router.push(`/room/${roomId}`);
-  };
+const handleJoinRoom = () => {
+  if (!roomId.trim()) {
+    alert("Enter room ID");
+    return;
+  }
+
+  router.push(`/room/${roomId}`); 
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white">

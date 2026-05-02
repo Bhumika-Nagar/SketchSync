@@ -22,11 +22,18 @@ export type DeleteSocketEvent = {
   shapeId: string;
 };
 
+export type BatchSocketEvent = {
+  type: "batch";
+  events: RoomSocketEvent[];
+};
+
 export type RoomSocketEvent =
   | ChatSocketEvent
   | DrawSocketEvent
   | UpdateSocketEvent
   | DeleteSocketEvent;
+
+export type RoomSocketPayload = RoomSocketEvent | BatchSocketEvent;
 
 export type RoomEventListener = (event: RoomSocketEvent) => void;
 export type RoomEventSubscriber = (listener: RoomEventListener) => () => void;

@@ -1,9 +1,8 @@
-import type p5 from "p5";
 import type { CanvasShape } from "./types";
 import { getResizeHandlePoints, getShapeBounds } from "./utils";
 
 function drawArrowHead(
-  sketch: p5,
+  context: CanvasRenderingContext2D,
   startX: number,
   startY: number,
   endX: number,
@@ -12,44 +11,47 @@ function drawArrowHead(
   const angle = Math.atan2(endY - startY, endX - startX);
   const headLength = 14;
 
-  sketch.line(
-    endX,
-    endY,
+  context.moveTo(endX, endY);
+  context.lineTo(
     endX - headLength * Math.cos(angle - Math.PI / 6),
     endY - headLength * Math.sin(angle - Math.PI / 6),
   );
-  sketch.line(
-    endX,
-    endY,
+  context.moveTo(endX, endY);
+  context.lineTo(
     endX - headLength * Math.cos(angle + Math.PI / 6),
     endY - headLength * Math.sin(angle + Math.PI / 6),
   );
 }
 
-export function drawShape(sketch: p5, shape: CanvasShape) {
-  sketch.stroke(241, 245, 249);
-  sketch.strokeWeight(shape.type === "pencil" ? 2.5 : 2);
-  sketch.noFill();
+export function drawShape(context: CanvasRenderingContext2D, shape: CanvasShape) {
+  context.save();
+  context.strokeStyle = "rgb(241, 245, 249)";
+  context.fillStyle = "rgb(241, 245, 249)";
+  context.lineWidth = shape.type === "pencil" ? 2.5 : 2;
+  context.lineCap = "round";
+  context.lineJoin = "round";
 
   if (shape.type === "text") {
-    sketch.noStroke();
-    sketch.fill(241, 245, 249);
-    sketch.textSize(20);
-    sketch.textAlign(sketch.LEFT, sketch.BASELINE);
-    sketch.text(shape.text ?? "", shape.x1, shape.y1);
+    context.font = "20px sans-serif";
+    context.textBaseline = "alphabetic";
+    context.fillText(shape.text ?? "", shape.x1, shape.y1);
+    context.restore();
     return;
   }
 
   if (shape.type === "pencil" && shape.points && shape.points.length > 1) {
-    sketch.beginShape();
-    shape.points.forEach((point) => {
-      sketch.vertex(point.x, point.y);
-    });
-    sketch.endShape();
+    context.beginPath();
+    context.moveTo(shape.points[0].x, shape.points[0].y);
+    for (let index = 1; index < shape.points.length; index += 1) {
+      context.lineTo(shape.points[index].x, shape.points[index].y);
+    }
+    context.stroke();
+    context.restore();
     return;
   }
 
   if (shape.x2 === undefined || shape.y2 === undefined) {
+    context.restore();
     return;
   }
 
@@ -57,7 +59,8 @@ export function drawShape(sketch: p5, shape: CanvasShape) {
     case "rect": {
       const width = shape.x2 - shape.x1;
       const height = shape.y2 - shape.y1;
-      sketch.rect(shape.x1, shape.y1, width, height);
+      context.strokeRect(shape.x1, shape.y1, width, height);
+      context.restore();
       return;
     }
     case "circle": {
@@ -67,52 +70,64 @@ export function drawShape(sketch: p5, shape: CanvasShape) {
       );
       const diameterX = shape.x2 >= shape.x1 ? size : -size;
       const diameterY = shape.y2 >= shape.y1 ? size : -size;
-      sketch.ellipse(
+      context.beginPath();
+      context.ellipse(
         shape.x1 + diameterX / 2,
         shape.y1 + diameterY / 2,
-        Math.abs(diameterX),
-        Math.abs(diameterY),
+        Math.abs(diameterX) / 2,
+        Math.abs(diameterY) / 2,
+        0,
+        0,
+        Math.PI * 2,
       );
+      context.stroke();
+      context.restore();
       return;
     }
     case "diamond": {
       const centerX = (shape.x1 + shape.x2) / 2;
       const centerY = (shape.y1 + shape.y2) / 2;
-      sketch.quad(
-        centerX,
-        shape.y1,
-        shape.x2,
-        centerY,
-        centerX,
-        shape.y2,
-        shape.x1,
-        centerY,
-      );
+      context.beginPath();
+      context.moveTo(centerX, shape.y1);
+      context.lineTo(shape.x2, centerY);
+      context.lineTo(centerX, shape.y2);
+      context.lineTo(shape.x1, centerY);
+      context.closePath();
+      context.stroke();
+      context.restore();
       return;
     }
     case "line": {
-      sketch.line(shape.x1, shape.y1, shape.x2, shape.y2);
+      context.beginPath();
+      context.moveTo(shape.x1, shape.y1);
+      context.lineTo(shape.x2, shape.y2);
+      context.stroke();
+      context.restore();
       return;
     }
     case "arrow": {
-      sketch.line(shape.x1, shape.y1, shape.x2, shape.y2);
-      drawArrowHead(sketch, shape.x1, shape.y1, shape.x2, shape.y2);
+      context.beginPath();
+      context.moveTo(shape.x1, shape.y1);
+      context.lineTo(shape.x2, shape.y2);
+      drawArrowHead(context, shape.x1, shape.y1, shape.x2, shape.y2);
+      context.stroke();
+      context.restore();
       return;
     }
     default:
+      context.restore();
       return;
   }
 }
 
-export function drawSelection(sketch: p5, shape: CanvasShape) {
+export function drawSelection(context: CanvasRenderingContext2D, shape: CanvasShape) {
   const bounds = getShapeBounds(shape);
   const handles = getResizeHandlePoints(shape);
 
-  sketch.push();
-  sketch.noFill();
-  sketch.stroke(96, 165, 250);
-  sketch.strokeWeight(1.5);
-  sketch.rect(
+  context.save();
+  context.strokeStyle = "rgb(96, 165, 250)";
+  context.lineWidth = 1.5;
+  context.strokeRect(
     bounds.left - 6,
     bounds.top - 6,
     bounds.right - bounds.left + 12,
@@ -120,14 +135,17 @@ export function drawSelection(sketch: p5, shape: CanvasShape) {
   );
 
   if (handles) {
-    sketch.fill(96, 165, 250);
-    sketch.stroke(226, 232, 240);
-    sketch.strokeWeight(1.5);
+    context.fillStyle = "rgb(96, 165, 250)";
+    context.strokeStyle = "rgb(226, 232, 240)";
+    context.lineWidth = 1.5;
 
     Object.values(handles).forEach((handle) => {
-      sketch.circle(handle.x, handle.y, 12);
+      context.beginPath();
+      context.arc(handle.x, handle.y, 6, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
     });
   }
 
-  sketch.pop();
+  context.restore();
 }

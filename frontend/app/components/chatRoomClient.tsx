@@ -1,23 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { type RoomSocketEvent, type RoomEventSubscriber } from "../hooks/useSocket";
 import Input from "./ui/Input";
 import Button from "./ui/Button";
 
-export function ChatRoomClient({
-  messages,
-  id,
-  socket,
-  subscribeToRoomEvents,
-}: {
+type ChatRoomClientProps = {
   messages: { message: string }[];
-  id: string;
+  id: string | null;
+  loading?: boolean;
   socket?: WebSocket;
   subscribeToRoomEvents: RoomEventSubscriber;
-}) {
+};
+
+function ChatRoomClientComponent({
+  messages,
+  id,
+  loading = false,
+  socket,
+  subscribeToRoomEvents,
+}: ChatRoomClientProps) {
   const [chats, setChats] = useState(messages);
   const [currentMessage, setCurrentMessage] = useState("");
+
+  useEffect(() => {
+    setChats(messages);
+  }, [messages]);
 
   useEffect(() => {
     return subscribeToRoomEvents((event: RoomSocketEvent) => {
@@ -30,6 +38,23 @@ export function ChatRoomClient({
     });
   }, [subscribeToRoomEvents]);
 
+  const handleSend = useCallback(() => {
+    const message = currentMessage.trim();
+
+    if (!message || !socket || !id) {
+      return;
+    }
+
+    socket.send(
+      JSON.stringify({
+        type: "chat",
+        roomId: id,
+        message,
+      }),
+    );
+    setCurrentMessage("");
+  }, [currentMessage, id, socket]);
+
   return (
     <aside className="flex min-h-680px flex-col rounded-[28px] border border-white/10 bg-white/5 p-5 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.95)] backdrop-blur">
       <div className="mb-5 border-b border-white/10 pb-4">
@@ -40,7 +65,11 @@ export function ChatRoomClient({
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto pr-1">
-        {chats.length === 0 ? (
+        {loading ? (
+          <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 px-4 py-6 text-sm text-slate-400">
+            Loading messages...
+          </div>
+        ) : chats.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 px-4 py-6 text-sm text-slate-400">
             No messages yet.
           </div>
@@ -60,33 +89,19 @@ export function ChatRoomClient({
         <Input
           type="text"
           value={currentMessage}
+          disabled={loading || !id}
           placeholder="Send a message"
           onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
             setCurrentMessage(event.target.value);
           }}
         />
 
-        <Button
-          onClick={() => {
-            const message = currentMessage.trim();
-
-            if (!message) {
-              return;
-            }
-
-            socket?.send(
-              JSON.stringify({
-                type: "chat",
-                roomId: id,
-                message,
-              }),
-            );
-            setCurrentMessage("");
-          }}
-        >
+        <Button onClick={handleSend}>
           Send message
         </Button>
       </div>
     </aside>
   );
 }
+
+export const ChatRoomClient = memo(ChatRoomClientComponent);

@@ -158,6 +158,45 @@ router.get("/room/:slug", async (req, res) => {
   }
 });
 
+router.get("/room-with-messages/:slug", async (req, res) => {
+  try {
+    const slug = req.params.slug;
+
+    const room = await prismaClient.room.findUnique({
+      where: { slug },
+      include: {
+        chats: {
+          select: {
+            message: true,
+          },
+          orderBy: {
+            id: "desc",
+          },
+          take: 50,
+        },
+      },
+    });
+
+    if (!room) {
+      return res.status(404).json({
+        message: "Room not found",
+      });
+    }
+
+    const { chats, ...roomData } = room;
+
+    res.json({
+      room: roomData,
+      messages: chats,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+});
+
 //room permissions
 //rate limiting
 //propogate to a queue to make it faster

@@ -1,28 +1,36 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import Canvas from "./canvas/Canvas";
 import { ChatRoomClient } from "./chatRoomClient";
 import {
   type RoomEventListener,
   type RoomEventSubscriber,
+  type RoomSocketPayload,
   type RoomSocketEvent,
   useSocket,
 } from "../hooks/useSocket";
+import { apiRequest } from "@/lib/api";
 
 type RoomClientProps = {
-  roomId: string;
-  messages: { message: string }[];
   slug: string;
 };
 
-export default function RoomClient({
-  roomId,
-  messages,
-  slug,
-}: RoomClientProps) {
+type RoomResponse = {
+  room: {
+    id: string;
+    slug: string;
+  };
+  messages: { message: string }[];
+};
+
+function RoomClient({ slug }: RoomClientProps) {
   const { socket, loading } = useSocket();
   const listenersRef = useRef(new Set<RoomEventListener>());
+  const [roomData, setRoomData] = useState<RoomResponse | null>(null);
+  const [isLoadingRoom, setIsLoadingRoom] = useState(true);
+  const [roomError, setRoomError] = useState<string | null>(null);
+  const roomId = roomData?.room.id ?? null;
 
   const subscribeToRoomEvents = useCallback<RoomEventSubscriber>((listener) => {
     listenersRef.current.add(listener);
@@ -33,7 +41,42 @@ export default function RoomClient({
   }, []);
 
   useEffect(() => {
-    if (!socket || loading) {
+    let cancelled = false;
+
+    const loadRoom = async () => {
+      setIsLoadingRoom(true);
+      setRoomError(null);
+
+      try {
+        const data = await apiRequest<RoomResponse>(
+          "get",
+          `/user/room-with-messages/${slug}`,
+        );
+
+        if (!cancelled) {
+          setRoomData(data);
+        }
+      } catch {
+        if (!cancelled) {
+          setRoomError("Unable to load this room right now.");
+          setRoomData(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingRoom(false);
+        }
+      }
+    };
+
+    loadRoom();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
+  useEffect(() => {
+    if (!socket || loading || !roomId) {
       return;
     }
 
@@ -45,20 +88,29 @@ export default function RoomClient({
     );
 
     const handleMessage = (event: MessageEvent<string>) => {
-      const parsedData = JSON.parse(event.data) as Partial<RoomSocketEvent>;
+      const parsedData = JSON.parse(event.data) as Partial<RoomSocketPayload>;
 
-      switch (parsedData.type) {
-        case "chat":
-        case "draw":
-        case "update":
-        case "delete":
-          listenersRef.current.forEach((listener) => {
-            listener(parsedData as RoomSocketEvent);
-          });
-          break;
-        default:
-          break;
+      const notifyListeners = (roomEvent: Partial<RoomSocketPayload>) => {
+        switch (roomEvent.type) {
+          case "chat":
+          case "draw":
+          case "update":
+          case "delete":
+            listenersRef.current.forEach((listener) => {
+              listener(roomEvent as RoomSocketEvent);
+            });
+            break;
+          default:
+            break;
+        }
+      };
+
+      if (parsedData.type === "batch" && Array.isArray(parsedData.events)) {
+        parsedData.events.forEach((roomEvent) => notifyListeners(roomEvent));
+        return;
       }
+
+      notifyListeners(parsedData);
     };
 
     socket.addEventListener("message", handleMessage);
@@ -83,12 +135,20 @@ export default function RoomClient({
           </p>
           <div className="mt-2 flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
             <div>
-              <h1 className="text-3xl font-semibold text-white">{slug}</h1>
+              <h1 className="text-3xl font-semibold text-white">
+                {roomData?.room.slug ?? slug}
+              </h1>
               <p className="text-sm text-slate-400">
-                Collaborative whiteboard with live chat and local drawing tools.
+                {isLoadingRoom
+                  ? "Loading room content without blocking navigation."
+                  : roomError
+                    ? roomError
+                    : "Collaborative whiteboard with live chat and local drawing tools."}
               </p>
             </div>
-            <p className="text-sm text-slate-500">Room ID: {roomId}</p>
+            <p className="text-sm text-slate-500">
+              Room ID: {roomId ?? "Loading..."}
+            </p>
           </div>
         </header>
 
@@ -100,7 +160,8 @@ export default function RoomClient({
           />
           <ChatRoomClient
             id={roomId}
-            messages={messages}
+            loading={isLoadingRoom}
+            messages={roomData?.messages ?? []}
             socket={socket}
             subscribeToRoomEvents={subscribeToRoomEvents}
           />
@@ -109,3 +170,5 @@ export default function RoomClient({
     </main>
   );
 }
+
+export default memo(RoomClient);

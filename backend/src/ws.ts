@@ -45,25 +45,25 @@ type IncomingSocketMessage =
     };
 
 const users: User[] = [];
-function checkUser(token: string):string | null | undefined {
-  const decoded= jwt.verify(token, process.env.JWT_SECRET as string);
-
-  if(typeof decoded == "string"){
-    
+function checkUser(token: string): string | null {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+    if (typeof decoded === "string" || !decoded || !(decoded as any).userId) {
+      return null;
+    }
+    return (decoded as any).userId;
+  } catch (e) {
     return null;
   }
-
-  if(!decoded || !decoded.userId){
-    
-    return null;
-  }
-
-  return decoded.userId;
 }
 
-function broadcastToRoom(roomId: string, payload: object) {
+function broadcastToRoom(roomId: string, payload: object, senderWs?: WebSocket) {
   users.forEach((user) => {
-    if (user.rooms.includes(roomId)) {
+    if (
+      user.rooms.includes(roomId) &&
+      user.ws !== senderWs &&              
+      user.ws.readyState === WebSocket.OPEN  
+    ) {
       user.ws.send(JSON.stringify(payload));
     }
   });
@@ -108,22 +108,22 @@ async function handleSocketMessage(ws: WebSocket, parsedData: IncomingSocketMess
       type:"chat",
       message: parsedData.message,
       roomId: parsedData.roomId
-    });
+    }, ws);
     return;
   }
 
   if (parsedData.type === "draw") {
-    broadcastToRoom(parsedData.roomId, parsedData);
+    broadcastToRoom(parsedData.roomId, parsedData, ws);
     return;
   }
 
   if (parsedData.type === "update") {
-    broadcastToRoom(parsedData.roomId, parsedData);
+    broadcastToRoom(parsedData.roomId, parsedData, ws);
     return;
   }
 
   if (parsedData.type === "delete") {
-    broadcastToRoom(parsedData.roomId, parsedData);
+    broadcastToRoom(parsedData.roomId, parsedData, ws);
   }
 }
 

@@ -41,9 +41,10 @@ function ChatRoomClientComponent({
   const handleSend = useCallback(() => {
     const message = currentMessage.trim();
 
-    if (!message || !socket || !id) {
-      return;
-    }
+    
+    if (!message || !socket || !id) return;
+
+    if (socket.readyState !== WebSocket.OPEN) return;
 
     socket.send(
       JSON.stringify({

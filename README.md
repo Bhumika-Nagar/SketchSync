@@ -19,4 +19,4 @@ A real-time collaborative drawing application inspired by Excalidraw. SketchSync
 
 ### Frontend
 * Next.js
-* Canvas API
+* p5.js

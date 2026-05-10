@@ -13,7 +13,7 @@ A real-time collaborative drawing application inspired by Excalidraw. SketchSync
 
 ### Backend
 * Node.js
-* Express
+* Postgress
 * WebSocket (ws)
 * TypeScript
 

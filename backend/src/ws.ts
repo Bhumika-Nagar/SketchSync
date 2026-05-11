@@ -1,7 +1,7 @@
 import { WebSocketServer, WebSocket } from "ws";
 import jwt from "jsonwebtoken";
 import { prismaClient } from "./db";
-const wss= new WebSocketServer({ port: 8080 });
+import { Server } from "http";
 
 interface User{
   ws: WebSocket,
@@ -127,6 +127,10 @@ async function handleSocketMessage(ws: WebSocket, parsedData: IncomingSocketMess
   }
 }
 
+export function setupWebSocket(server: Server){
+
+const wss = new WebSocketServer({server});
+
 wss.on('connection',function connection(ws, request){
   const url= request.url;
   if(!url){
@@ -161,3 +165,5 @@ wss.on('connection',function connection(ws, request){
   });
 })
 
+console.log("websocket server intialized");
+}

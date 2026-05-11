@@ -117,17 +117,22 @@ function RoomClient({ slug }: RoomClientProps) {
 
     return () => {
       socket.removeEventListener("message", handleMessage);
-      socket.send(
-        JSON.stringify({
-          type: "leave_room",
-          roomId,
-        }),
-      );
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(
+          JSON.stringify({
+            type: "leave_room",
+            roomId,
+          }),
+        );
+      }
     };
   }, [socket, loading, roomId]);
 
   return (
-    <main className="min-h-screen bg-radial-gradient(circle_at_top,_rgba(37,99,235,0.2),_transparent_38%),linear-gradient(180deg,_#020617_0%,_#0f172a_100%) px-4 py-6 text-slate-100 md:px-6 lg:px-8">
+    <main
+      style={{ minHeight: "100vh", background: "linear-gradient(180deg, #020617 0%, #0f172a 100%)" }}
+      className="px-4 py-6 text-slate-100 md:px-6 lg:px-8"
+    >
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <header className="rounded-[28px] border border-white/10 bg-white/5 px-6 py-5 shadow-[0_24px_80px_-40px_rgba(15,23,42,0.95)] backdrop-blur">
           <p className="text-xs uppercase tracking-[0.28em] text-blue-200/70">
@@ -152,7 +157,11 @@ function RoomClient({ slug }: RoomClientProps) {
           </div>
         </header>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        {/* Grid with explicit min-height so canvas host gets real dimensions */}
+        <div
+          style={{ minHeight: "650px" }}
+          className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]"
+        >
           <Canvas
             roomId={roomId}
             socket={socket}

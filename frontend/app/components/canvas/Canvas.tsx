@@ -349,12 +349,14 @@ function CanvasComponent({ roomId, socket, subscribeToRoomEvents }: CanvasProps)
       return;
     }
 
-    const width = canvas.width / (window.devicePixelRatio || 1);
-    const height = canvas.height / (window.devicePixelRatio || 1);
+    const dpr = window.devicePixelRatio || 1;
+    const width = canvas.width / dpr;
+    const height = canvas.height / dpr;
 
     context.save();
-    context.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
     context.clearRect(0, 0, width, height);
+    // Fill with dark background
     context.fillStyle = "rgb(15, 23, 42)";
     context.fillRect(0, 0, width, height);
     drawGrid(context, width, height);
@@ -588,12 +590,13 @@ function CanvasComponent({ roomId, socket, subscribeToRoomEvents }: CanvasProps)
     }
 
     const resizeCanvas = () => {
-      const devicePixelRatio = window.devicePixelRatio || 1;
-      const width = Math.max(host.clientWidth, 320);
-      const height = Math.max(host.clientHeight, 420);
+      const dpr = window.devicePixelRatio || 1;
+      // Use offsetWidth/offsetHeight which are more reliable than clientWidth/clientHeight
+      const width = Math.max(host.offsetWidth || host.clientWidth, 320);
+      const height = Math.max(host.offsetHeight || host.clientHeight, 500);
 
-      canvas.width = Math.floor(width * devicePixelRatio);
-      canvas.height = Math.floor(height * devicePixelRatio);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       markDirty();
@@ -753,7 +756,7 @@ function CanvasComponent({ roomId, socket, subscribeToRoomEvents }: CanvasProps)
         shapesRef.current = [...shapesRef.current, nextShape];
 
         const activeRoomId = roomIdRef.current;
-        if (activeRoomId) {
+        if (activeRoomId && socketRef.current?.readyState === WebSocket.OPEN) {
           queueSocketEvent({
             type: "draw",
             roomId: activeRoomId,
@@ -811,7 +814,10 @@ function CanvasComponent({ roomId, socket, subscribeToRoomEvents }: CanvasProps)
   }, []);
 
   return (
-    <section className="relative flex min-h-680px flex-1 flex-col overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/80 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.95)]">
+    <section
+      style={{ minHeight: "600px" }}
+      className="relative flex flex-col flex-1 overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/80 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.95)]"
+    >
       <div className="pointer-events-none absolute inset-x-0 top-4 z-10 flex justify-center px-4">
         <div className="pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-2 rounded-full border border-white/12 bg-slate-950/85 px-3 py-3 shadow-[0_20px_60px_-32px_rgba(15,23,42,0.95)] backdrop-blur">
           {TOOLS.map((item) => (
@@ -828,10 +834,23 @@ function CanvasComponent({ roomId, socket, subscribeToRoomEvents }: CanvasProps)
         </div>
       </div>
 
-      <div ref={hostRef} className="flex-1 p-4 pt-24">
+      
+      <div
+        ref={hostRef}
+        style={{ flex: 1, minHeight: "500px", padding: "96px 16px 16px" }}
+      >
         <canvas
           ref={canvasRef}
-          className="block h-full min-h-420px w-full rounded-[20px] border border-white/10 bg-slate-900 touch-none"
+          style={{
+            display: "block",
+            width: "100%",
+            height: "100%",
+            borderRadius: "20px",
+            border: "1px solid rgba(255,255,255,0.1)",
+            touchAction: "none",
+            cursor: "crosshair",
+            
+          }}
         />
       </div>
     </section>
